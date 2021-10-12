@@ -1,0 +1,54 @@
+<idea-plugin>
+    <id>com.sofast.cloud.plugin.feignSdkGen</id>
+    <name>SoFast Feign Client Generator</name>
+    <version>0.1</version>
+    <vendor email="yanqing.yang@nttdata.com" url="http://ncit-sol.cn/">NCIT.SOL1</vendor>
+
+    <description><![CDATA[
+        SoFast微服务框架专用Feign SDK生成器
+        功能:
+        <ul>
+            <li>支持生成Feign Client接口</li>
+            <li>支持生成Fallback类</li>
+            <li>支持生成Factory类</li>
+            <li>支持生成常量类</li>
+            <li>支持生成Provider类</li>
+            <li>支持迁移接口所需JavaBean到SDK目录</li>
+            <li>暂不支持增量生成（同一Controller内自动覆盖，统一常量文件需要手动merge）</li>
+        </ul>
+        ]]>
+    </description>
+
+    <change-notes><![CDATA[
+      <h4>0.1</h4>
+      <ul>
+          <li>初版做成</li>
+      </ul>
+      ]]>
+    </change-notes>
+
+    <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+    <idea-version since-build="173.0"/>
+
+    <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
+    <depends>com.intellij.modules.lang</depends>
+
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add your extensions here -->
+        <projectService serviceInterface="com.sofast.cloud.plugin.feignsdkgen.service.GenerateService"
+                        serviceImplementation="com.sofast.cloud.plugin.feignsdkgen.service.impl.GenerateServiceImpl"/>
+    </extensions>
+
+    <actions>
+        <!-- Add your actions here -->
+        <action id="FeignSDKGen.menu" class="com.sofast.cloud.plugin.feignsdkgen.action.FeignSdkGen" text="Feign Client"
+                description="生成Feign Client">
+            <add-to-group group-id="GenerateGroup" anchor="first"/>
+        </action>
+    </actions>
+
+</idea-plugin>
