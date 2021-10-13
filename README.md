@@ -22,13 +22,15 @@ PS：
 
 因为该插件是基于SoFast框架写的，因此在插件中有一些规范必须遵循才能正确的生成代码。
  - 微服务前缀："so-fast-"
- - package tree
+ - dto、vo等javabean必须有对应后缀才可以识别，否则统一算作entity
+ - package tree规范强制如下：
  
         x.x.x.sdk
                 |--constants
                 |--domain
                         |--vo
                         |--dto
+                |--entity
                 |--factory
                 |--fallback
                 |--feign
