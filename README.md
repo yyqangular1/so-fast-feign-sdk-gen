@@ -20,6 +20,19 @@
 
 PS：
 
+因为该插件是基于SoFast框架写的，因此在插件中有一些规范必须遵循才能正确的生成代码。
+ - 微服务前缀："so-fast-"
+ - package tree
+ 
+        x.x.x.sdk
+                |--constants
+                |--domain
+                        |--vo
+                        |--dto
+                |--factory
+                |--fallback
+                |--feign
+
 SoFast框架是基于SpringBoot+SpringCloud&Alibaba的一套企业级微服务快速开发框架
 
 框架详细文档：http://doc.yangyanqing.cn:4000/book_so-fast-cloud/

@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2019-2029. 恩梯梯数据（中国）信息技术有限公司. All Rights Reserved.
- */
-
 package com.sofast.cloud.plugin.feignsdkgen.utils;
 
 import com.sofast.cloud.plugin.feignsdkgen.model.ClassModel;
