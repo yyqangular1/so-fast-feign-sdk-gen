@@ -14,7 +14,15 @@ import lombok.extern.slf4j.Slf4j;
 <#list feignProviderImport as fpi>
 import ${fpi};
 </#list>
-
+<#if hasBean>
+<#list newSdkBeanImport as nsbs>
+import ${nsbs};
+</#list>
+<#else>
+<#list sdkBeanSet as sbs>
+import ${sbs};
+</#list>
+</#if>
 /**
 <#if classDescription??>
  * ${classDescription?replace('\"','')}的Feign接口提供者trim

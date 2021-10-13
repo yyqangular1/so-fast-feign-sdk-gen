@@ -44,6 +44,13 @@ public class GenerateServiceImpl implements GenerateService {
     private Project project;
     private ClassModel __fcc;
 
+    private VirtualFile entityVf = null, domainVf = null, voVf = null, dtoVf = null;
+
+    /**
+     * 如果将bean生成到sdk的包中，那么import需要修改微新生成的bean package路径
+     */
+    private Set<String> newSdkBeanImport = new HashSet<>(5);
+
     public GenerateServiceImpl(Project project) {
         this.project = project;
     }
@@ -51,65 +58,55 @@ public class GenerateServiceImpl implements GenerateService {
     @Override
     public boolean generate(GenerateOptions options) {
 
+        newSdkBeanImport.clear();
+        entityVf = null;
+        domainVf = null;
+        voVf = null;
+        dtoVf = null;
+
         Application applicationManager = ApplicationManager.getApplication();
         applicationManager.runWriteAction(() -> {
 
-            try {
-                // 创建基础目录
+            // 创建基础目录
 //                VirtualFile sdkVf = VfsUtil.createDirectoryIfMissing(options.getClassPath());
 //                VirtualFile sdkVf = VfsUtil.createDirectoryIfMissing(options.getPackageName());
-                PsiDirectory dir = PackageUtil.findOrCreateDirectoryForPackage(this.project, options.getPackageName(), (PsiDirectory) null, false);
-                VirtualFile sdkVf = dir.getVirtualFile();
+            PsiDirectory dir = PackageUtil.findOrCreateDirectoryForPackage(this.project, options.getPackageName(), (PsiDirectory) null, false);
+            VirtualFile sdkVf = dir.getVirtualFile();
 
-                // 这三个因为有包含关系，所以在这里定义.vo和dto必须包含在domian目录下 :)
-                VirtualFile domainVf = null, dtoVf = null, voVf = null;
-                if (options.isHasDTO() || options.isHasVO()) {
-                    domainVf = VfsUtil.createDirectoryIfMissing(sdkVf, SdkEnum.DOMAIN.getName());
-                }
-                if (options.isHasDTO()) {
-                    dtoVf = VfsUtil.createDirectoryIfMissing(domainVf, SdkEnum.DTO.getName());
-                }
-                if (options.isHasVO()) {
-                    voVf = VfsUtil.createDirectoryIfMissing(domainVf, SdkEnum.VO.getName());
-                }
+            __fcc = createFeignClientClass(options);
 
-                __fcc = createFeignClientClass(options);
+            // ================= 生成constants文件
+            generateConstants(options, sdkVf);
+            // ================= 生成constants文件
 
-                // ================= 生成constants文件
-                generateConstants(options, sdkVf);
-                // ================= 生成constants文件
+            // ================= 生成entity文件
+            generateEntity(options, sdkVf);
+            // ================= 生成entity文件
 
-                // ================= 生成entity文件
-                generateEntity(options, sdkVf);
-                // ================= 生成entity文件
+            // ================= 生成dto文件
+            generateDTO(options, sdkVf);
+            // ================= 生成dto文件
 
-                // ================= 生成dto文件
-                generateDTO(options, dtoVf);
-                // ================= 生成dto文件
+            // ================= 生成vo文件
+            generateVO(options, sdkVf);
+            // ================= 生成vo文件
 
-                // ================= 生成vo文件
-                generateVO(options, voVf);
-                // ================= 生成vo文件
+            // ================= 生成Feign接口文件
+            generateFeign(options, sdkVf);
+            // ================= 生成Feign接口文件
 
-                // ================= 生成Feign接口文件
-                generateFeign(options, sdkVf);
-                // ================= 生成Feign接口文件
+            // ================= 生成Feign Provider文件
+            generateFeignProvider(options, sdkVf);
+            // ================= 生成Feign Provider文件
 
-                // ================= 生成Feign Provider文件
-                generateFeignProvider(options, sdkVf);
-                // ================= 生成Feign Provider文件
+            // ================= 生成fallback文件
+            generateFallback(options, sdkVf);
+            // ================= 生成fallback文件
 
-                // ================= 生成fallback文件
-                generateFallback(options, sdkVf);
-                // ================= 生成fallback文件
+            // ================= 生成Factory文件
+            generateFactory(options, sdkVf);
+            // ================= 生成Factory文件
 
-                // ================= 生成Factory文件
-                generateFactory(options, sdkVf);
-                // ================= 生成Factory文件
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
 
         });
 
@@ -136,6 +133,7 @@ public class GenerateServiceImpl implements GenerateService {
         classModel.setFeignConstantImport(feignConstantImport);
         classModel.setFeignReturnVal(options.getFeignReturnVal());
         classModel.setHasSlf4j(options.isHasSlf4j());
+        classModel.setHasBean(options.isHasBean());
 
         // 文件名
         classModel.setFeignClassName(options.getClassName());
@@ -143,6 +141,7 @@ public class GenerateServiceImpl implements GenerateService {
         classModel.setUrl(StringUtil.isEmpty(options.getClassMappingPath()) ? "" : options.getClassMappingPath());
         // 方法
         Set<String> importList = new HashSet<>();
+        Set<String> sdkImportList = new HashSet<>();
         List<MethodModel> methodList = new ArrayList<MethodModel>();
         Set<String> methodAnnotationImport = new HashSet<>(3);
 
@@ -175,6 +174,7 @@ public class GenerateServiceImpl implements GenerateService {
             method.setMethodDescription(m.getMethodDescription());
             methodList.add(method);
             importList.addAll(m.getImportSet());
+            sdkImportList.addAll(m.getSdkBeanSet());
 
             // Provider类的import单独处理
             providerImport.addAll(importList);
@@ -193,6 +193,7 @@ public class GenerateServiceImpl implements GenerateService {
         });
         classModel.setMethods(methodList);
         classModel.setImportList(importList);
+        classModel.setSdkBeanSet(sdkImportList);
         classModel.setMethodAnnotationImport(methodAnnotationImport);
 
 
@@ -232,6 +233,9 @@ public class GenerateServiceImpl implements GenerateService {
      */
     private void generateFeign(GenerateOptions options, VirtualFile sdkVf) {
         try {
+            // 将迁移后sdk的javabean package路径引入
+            __fcc.setNewSdkBeanImport(newSdkBeanImport);
+
             VirtualFile feignVf = VfsUtil.createDirectoryIfMissing(sdkVf, SdkEnum.FEIGN.getName());
             String feignClient = TemplateProcessor.parseFeignClient(__fcc);
             VirtualFile feign = feignVf.findOrCreateChildData(feignVf, options.getClassName() + ".java");
@@ -312,40 +316,15 @@ public class GenerateServiceImpl implements GenerateService {
     }
 
     private void generateEntity(GenerateOptions options, VirtualFile sdkVf) {
-        try {
-            if (!options.isHasEntity()) {
-                return;
-            }
-            VirtualFile entityVf = VfsUtil.createDirectoryIfMissing(sdkVf, SdkEnum.ENTITY.getName());
 
-            for (String s : __fcc.getImportList()) {
-                createBean(s, s.toUpperCase().endsWith("VO") || s.toUpperCase().endsWith("DTO"), options, entityVf, false);
-                // TODO 判断是否符合entity class
-//                if (s.startsWith("java.") || s.startsWith("org.springframework")
-//                        || s.startsWith("com.sofast.cloud.common.") || s.endsWith("R")
-//                        || s.toUpperCase().endsWith("VO") || s.toUpperCase().endsWith("DTO")) {
-//                    continue;
-//                }
-//                PsiFile[] filesByName = FilenameIndex.getFilesByName(this.project, s.substring(s.lastIndexOf(".") + 1) + ".java", GlobalSearchScope.projectScope(project));
-//                if (filesByName != null && filesByName.length > 0) {
-//                    // TODO 开始编辑文件
-//                    for (PsiFile psiFile : filesByName) {
-//                        // 存在多个同名文件时，包路径必须一致
-//                        if (psiFile instanceof PsiJavaFileImpl && s.startsWith(((PsiJavaFileImpl) psiFile).getPackageName())) {
-//                            StringBuilder sb = new StringBuilder();
-//                            for (PsiElement child : psiFile.getChildren()) {
-//                                if (child instanceof PsiPackageStatementImpl) {
-//                                    sb.append("package " + options.getPackageName() + "." + entityVf.getName() + ";");
-//                                } else {
-//                                    sb.append(child.getText());
-//                                }
-//                            }
-//
-//                            VirtualFile entity = entityVf.findOrCreateChildData(entityVf, psiFile.getName());
-//                            entity.setBinaryContent(sb.toString().getBytes("UTF-8"));
-//                        }
-//                    }
-//                }
+        if (!options.isHasBean()) {
+            return;
+        }
+
+        try {
+
+            for (String s : __fcc.getSdkBeanSet()) {
+                createBean(s, s.toUpperCase().endsWith("VO") || s.toUpperCase().endsWith("DTO"), options, sdkVf, SdkEnum.ENTITY);
             }
 
         } catch (IOException e) {
@@ -353,39 +332,29 @@ public class GenerateServiceImpl implements GenerateService {
         }
     }
 
-    private void generateDTO(GenerateOptions options, VirtualFile dtoVf) {
-        if (dtoVf == null) {
+    private void generateDTO(GenerateOptions options, VirtualFile sdkVf) {
+
+        if (!options.isHasBean()) {
+            return;
+        }
+
+        try {
+            for (String s : __fcc.getSdkBeanSet()) {
+                createBean(s, !s.toUpperCase().endsWith("DTO"), options, sdkVf, SdkEnum.DTO);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void generateVO(GenerateOptions options, VirtualFile sdkVf) {
+        if (!options.isHasBean()) {
             return;
         }
         try {
-            for (String s : __fcc.getImportList()) {
-                createBean(s, !s.toUpperCase().endsWith("DTO"), options, dtoVf, false);
-                // TODO 判断是否符合dto class
-//                if (s.startsWith("java.") || s.startsWith("org.springframework")
-//                        || s.startsWith("com.sofast.cloud.common.") || s.endsWith("R")
-//                        || !s.toUpperCase().endsWith("DTO")) {
-//                    continue;
-//                }
-//                PsiFile[] filesByName = FilenameIndex.getFilesByName(this.project, s.substring(s.lastIndexOf(".") + 1) + ".java", GlobalSearchScope.projectScope(project));
-//                if (filesByName != null && filesByName.length > 0) {
-//                    // TODO 开始编辑文件
-//                    for (PsiFile psiFile : filesByName) {
-//                        // 存在多个同名文件时，包路径必须一致
-//                        if (psiFile instanceof PsiJavaFileImpl && s.startsWith(((PsiJavaFileImpl) psiFile).getPackageName())) {
-//                            StringBuilder sb = new StringBuilder();
-//                            for (PsiElement child : psiFile.getChildren()) {
-//                                if (child instanceof PsiPackageStatementImpl) {
-//                                    sb.append("package " + options.getPackageName() + ".domain." + dtoVf.getName() + ";");
-//                                } else {
-//                                    sb.append(child.getText());
-//                                }
-//                            }
-//
-//                            VirtualFile dto = dtoVf.findOrCreateChildData(dtoVf, psiFile.getName());
-//                            dto.setBinaryContent(sb.toString().getBytes("UTF-8"));
-//                        }
-//                    }
-//                }
+            for (String s : __fcc.getSdkBeanSet()) {
+                createBean(s, !s.toUpperCase().endsWith("VO"), options, sdkVf, SdkEnum.VO);
             }
 
         } catch (IOException e) {
@@ -393,49 +362,7 @@ public class GenerateServiceImpl implements GenerateService {
         }
     }
 
-    private void generateVO(GenerateOptions options, VirtualFile voVf) {
-
-
-        if (voVf == null) {
-            return;
-        }
-        try {
-            for (String s : __fcc.getImportList()) {
-                createBean(s, !s.toUpperCase().endsWith("VO"), options, voVf, false);
-                // TODO 判断是否符合dto class
-//                if (s.startsWith("java.") || s.startsWith("org.springframework")
-//                        || s.startsWith("com.sofast.cloud.common.") || s.endsWith("R")
-//                        || !s.toUpperCase().endsWith("VO")) {
-//                    continue;
-//                }
-//                PsiFile[] filesByName = FilenameIndex.getFilesByName(this.project, s.substring(s.lastIndexOf(".") + 1) + ".java", GlobalSearchScope.projectScope(project));
-//                if (filesByName != null && filesByName.length > 0) {
-//                    // TODO 开始编辑文件
-//                    for (PsiFile psiFile : filesByName) {
-//                        // 存在多个同名文件时，包路径必须一致
-//                        if (psiFile instanceof PsiJavaFileImpl && s.startsWith(((PsiJavaFileImpl) psiFile).getPackageName())) {
-//                            StringBuilder sb = new StringBuilder();
-//                            for (PsiElement child : psiFile.getChildren()) {
-//                                if (child instanceof PsiPackageStatementImpl) {
-//                                    sb.append("package " + options.getPackageName() + ".domain." + voVf.getName() + ";");
-//                                } else {
-//                                    sb.append(child.getText());
-//                                }
-//                            }
-//
-//                            VirtualFile dto = voVf.findOrCreateChildData(voVf, psiFile.getName());
-//                            dto.setBinaryContent(sb.toString().getBytes("UTF-8"));
-//                        }
-//                    }
-//                }
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void createBean(String s, boolean beanMatchPattern, GenerateOptions options, VirtualFile virtualFile, boolean isEntity) throws IOException {
+    private void createBean(String s, boolean beanMatchPattern, GenerateOptions options, VirtualFile virtualFile, SdkEnum type) throws IOException {
 
         // TODO 判断是否符合dto class
         if (s.startsWith("java.") || s.startsWith("org.springframework")
@@ -443,6 +370,11 @@ public class GenerateServiceImpl implements GenerateService {
                 || beanMatchPattern) {
             return;
         }
+
+        if (s.startsWith("com.sofast.cloud.common.domain.vo.R")) {
+            return;
+        }
+
         PsiFile[] filesByName = FilenameIndex.getFilesByName(this.project, s.substring(s.lastIndexOf(".") + 1) + ".java", GlobalSearchScope.projectScope(project));
         if (filesByName != null && filesByName.length > 0) {
             // TODO 开始编辑文件
@@ -450,20 +382,49 @@ public class GenerateServiceImpl implements GenerateService {
                 // 存在多个同名文件时，包路径必须一致
                 if (psiFile instanceof PsiJavaFileImpl && s.startsWith(((PsiJavaFileImpl) psiFile).getPackageName())) {
                     StringBuilder sb = new StringBuilder();
+                    VirtualFile beanVf = null;
                     for (PsiElement child : psiFile.getChildren()) {
                         if (child instanceof PsiPackageStatementImpl) {
-                            if (isEntity) {
-                                sb.append("package " + options.getPackageName() + "." + virtualFile.getName() + ";");
-                            } else {
-                                sb.append("package " + options.getPackageName() + ".domain." + virtualFile.getName() + ";");
+
+                            switch (type) {
+                                case ENTITY:
+                                    if (entityVf == null) {
+                                        entityVf = VfsUtil.createDirectoryIfMissing(virtualFile, SdkEnum.ENTITY.getName());
+                                    }
+                                    beanVf = entityVf.findOrCreateChildData(entityVf, psiFile.getName());
+                                    sb.append("package " + options.getPackageName() + "." + entityVf.getName() + ";");
+                                    newSdkBeanImport.add(options.getPackageName() + "." + entityVf.getName() + "." + beanVf.getNameWithoutExtension());
+
+                                    beanVf.setBinaryContent(sb.toString().getBytes("UTF-8"));
+                                    break;
+                                case DTO:
+                                    if (dtoVf == null) {
+                                        domainVf = VfsUtil.createDirectoryIfMissing(virtualFile, SdkEnum.DOMAIN.getName());
+                                        dtoVf = VfsUtil.createDirectoryIfMissing(domainVf, SdkEnum.DTO.getName());
+                                    }
+                                    beanVf = dtoVf.findOrCreateChildData(dtoVf, psiFile.getName());
+                                    sb.append("package " + options.getPackageName() + ".domain." + dtoVf.getName() + ";");
+                                    newSdkBeanImport.add(options.getPackageName() + ".domain." + dtoVf.getName() + "." + beanVf.getNameWithoutExtension());
+
+                                    beanVf.setBinaryContent(sb.toString().getBytes("UTF-8"));
+                                    break;
+                                case VO:
+                                    if (voVf == null) {
+                                        domainVf = VfsUtil.createDirectoryIfMissing(virtualFile, SdkEnum.DOMAIN.getName());
+                                        voVf = VfsUtil.createDirectoryIfMissing(domainVf, SdkEnum.VO.getName());
+                                    }
+                                    beanVf = voVf.findOrCreateChildData(voVf, psiFile.getName());
+                                    sb.append("package " + options.getPackageName() + ".domain." + voVf.getName() + ";");
+                                    newSdkBeanImport.add(options.getPackageName() + ".domain." + voVf.getName() + "." + beanVf.getNameWithoutExtension());
+
+                                    break;
                             }
 
                         } else {
                             sb.append(child.getText());
                         }
                     }
-
-                    VirtualFile beanVf = virtualFile.findOrCreateChildData(virtualFile, psiFile.getName());
+                    // 写文件
                     beanVf.setBinaryContent(sb.toString().getBytes("UTF-8"));
                 }
             }

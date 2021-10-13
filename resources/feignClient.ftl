@@ -9,6 +9,15 @@ import ${feignConstantImport};
 <#list importList as il>
 import ${il};
 </#list>
+<#if hasBean>
+<#list newSdkBeanImport as nsbs>
+import ${nsbs};
+</#list>
+<#else>
+<#list sdkBeanSet as sbs>
+import ${sbs};
+</#list>
+</#if>
 <#list methodAnnotationImport as mai>
 import ${mai};
 </#list>

@@ -34,6 +34,8 @@ public class ClassModel {
      */
     private Set<String> importList;
 
+    private Set<String> sdkBeanSet;
+
     /**
      * GetMapping/PostMapping/RequestMapping的import
      */
@@ -54,4 +56,7 @@ public class ClassModel {
     private Set<String> feignProviderImport;
 
     private boolean hasSlf4j;
+
+    private Set<String> newSdkBeanImport;
+    private boolean hasBean;
 }

@@ -8,6 +8,15 @@ import ${packageName}.${feignClassName};
 <#list importList as il>
 import ${il};
 </#list>
+<#if hasBean>
+<#list newSdkBeanImport as nsbs>
+import ${nsbs};
+</#list>
+<#else>
+<#list sdkBeanSet as sbs>
+import ${sbs};
+</#list>
+</#if>
 <#if feignReturnVal != 0>
 import com.sofast.cloud.common.constants.MsgConstants;
 import com.sofast.cloud.common.domain.vo.R;

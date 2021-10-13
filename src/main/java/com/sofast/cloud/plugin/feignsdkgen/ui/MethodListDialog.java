@@ -41,7 +41,7 @@ public class MethodListDialog extends JDialog {
     private JLabel lblFile;
     private JLabel lblPackage;
     private JList methodList;
-    private JCheckBox chkEntity;
+    private JCheckBox chkBean;
     private JCheckBox chkDTO;
     private JCheckBox chkVO;
     private JPanel JPanelBody;
@@ -78,7 +78,7 @@ public class MethodListDialog extends JDialog {
 
     private List<String> methodUrlList = new ArrayList<>();
 
-    private Map<Integer, Set<String>> returnTypeList = new HashMap<>();
+//    private Map<Integer, Set<String>> returnTypeList = new HashMap<>();
 
     private List<PsiField> ownFields;
 
@@ -245,9 +245,11 @@ public class MethodListDialog extends JDialog {
                         item.setMethodMappingPathConst(methodMappingPathConst);
                         item.setMethodMappingPath(methodMappingPath);
                         // 返回值的import
-                        item.setImportSet(getReturnTypeList(method));
+                        item.setImportSet(getReturnTypeList(method).get("returnTypeList"));
+                        item.setSdkBeanSet(getReturnTypeList(method).get("sdkBeanSet"));
                         // 参数的import
-                        item.getImportSet().addAll(getParamTypeList(method));
+                        item.getImportSet().addAll(getParamTypeList(method).get("paramTypeList"));
+                        item.getSdkBeanSet().addAll(getParamTypeList(method).get("sdkBeanSet"));
                         item.setBody(method.getBody().getText());
 
                         String methodDescription = "";
@@ -295,14 +297,24 @@ public class MethodListDialog extends JDialog {
         });
     }
 
-    private Set<String> getReturnTypeList(PsiMethod method) {
+    private Map<String, Set<String>> getReturnTypeList(PsiMethod method) {
         if (null == method) {
-            return new HashSet<>();
+            return new HashMap<String, Set<String>>() {
+                {
+                    put("returnTypeList", new HashSet<>());
+                    put("sdkBeanSet", new HashSet<>());
+                }
+
+            };
         }
         PsiType returnType = method.getReturnType();
-        Set<String> returnTypeList = new HashSet<>(2);
-        buildMethodReturnAndParamType(returnType, returnTypeList);
-        return returnTypeList;
+        Set<String> returnTypeList = new HashSet<>(5);
+        Set<String> sdkBeanSet = new HashSet<>(5);
+        buildMethodReturnAndParamType(returnType, returnTypeList, sdkBeanSet);
+        Map<String, Set<String>> retMap = new HashMap<>(2);
+        retMap.put("returnTypeList", returnTypeList);
+        retMap.put("sdkBeanSet", sdkBeanSet);
+        return retMap;
     }
 
     /**
@@ -311,40 +323,60 @@ public class MethodListDialog extends JDialog {
      * @param method
      * @return
      */
-    private Set<String> getParamTypeList(PsiMethod method) {
-        if (null == method) {
-            return new HashSet<>();
+    private Map<String, Set<String>> getParamTypeList(PsiMethod method) {
+
+        if (null == method || method.getParameterList().isEmpty()) {
+            return new HashMap<String, Set<String>>() {
+                {
+                    put("paramTypeList", new HashSet<>());
+                    put("sdkBeanSet", new HashSet<>());
+                }
+
+            };
         }
         PsiParameterList parameterList = method.getParameterList();
-        if (parameterList.isEmpty()) {
-            return new HashSet<>();
-        }
-
-        Set<String> paramTypeList = new HashSet<>(2);
+        Set<String> paramTypeList = new HashSet<>(5);
+        Set<String> sdkBeanSet = new HashSet<>(5);
         for (PsiParameter parameter : parameterList.getParameters()) {
             // 注解类型
             PsiAnnotation[] annotations = parameter.getAnnotations();
             for (PsiAnnotation annotation : annotations) {
                 paramTypeList.add(annotation.getQualifiedName());
             }
-            buildMethodReturnAndParamType(parameter.getType(), paramTypeList);
+            buildMethodReturnAndParamType(parameter.getType(), paramTypeList, sdkBeanSet);
         }
-        return paramTypeList;
+        Map<String, Set<String>> retMap = new HashMap<>(2);
+        retMap.put("paramTypeList", paramTypeList);
+        retMap.put("sdkBeanSet", sdkBeanSet);
+
+        return retMap;
     }
 
-    private void buildMethodReturnAndParamType(PsiType targetType, Set<String> set) {
+    /**
+     * 获取参数和返回值的import class
+     *
+     * @param targetType 目标类型
+     * @param set        如果该类型为非sdk的bean，则放入通用引入类型中，只用于import，而不进行bean迁移
+     * @param sdkBeanSet 如果该类型为sdk下的bean，则放入sdk引入类型中，需要进行bean迁移，便于打包SDK
+     */
+    private void buildMethodReturnAndParamType(PsiType targetType, Set<String> set, Set<String> sdkBeanSet) {
         if (targetType instanceof PsiClassReferenceType) {
             PsiClassReferenceType type = (PsiClassReferenceType) targetType;
             // 获取主返回类型
             if (isWrapImport(type)) {
-                set.add(type.rawType().getCanonicalText());
+                // 判断是否为本工程的javabean
+                if (type.rawType().getCanonicalText().startsWith(baseParentPackage)) {
+                    sdkBeanSet.add(type.rawType().getCanonicalText());
+                } else {
+                    set.add(type.rawType().getCanonicalText());
+                }
             }
             // 获取泛型
             if (type.hasParameters()) {
                 PsiType[] parameters = type.getParameters();
                 // 处理是 List 的返回结果, 将List<T> 的泛型拿出来
                 for (int i = 0; i < parameters.length; i++) {
-                    buildMethodReturnAndParamType(parameters[i], set);
+                    buildMethodReturnAndParamType(parameters[i], set, sdkBeanSet);
 //                    if (parameters[i] instanceof PsiClassReferenceType) {
 //                        if (isWrapImport((PsiClassReferenceType) parameters[i])) {
 //                            set.add(parameters[i].getCanonicalText());
@@ -426,9 +458,9 @@ public class MethodListDialog extends JDialog {
         options.setApplicationNamePrefix(applicationNamePrefix);
         options.setProject(this.project);
         options.setSelectedList(selectedValuesList);
-        options.setHasEntity(chkEntity.isSelected());
-        options.setHasDTO(chkDTO.isSelected());
-        options.setHasVO(chkVO.isSelected());
+        options.setHasBean(chkBean.isSelected());
+//        options.setHasDTO(chkDTO.isSelected());
+//        options.setHasVO(chkVO.isSelected());
         options.setHasProvider(rdoHasProvider.isSelected());
         options.setHasFallback(FallbackCheckBox.isSelected());
         options.setHasFactory(FallbackFactoryCheckBox.isSelected());

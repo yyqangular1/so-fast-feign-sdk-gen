@@ -34,8 +34,14 @@ public class MethodListItem {
 
     /**
      * 方法返回值类型，包括泛型多层嵌套（包括参数的类型）
+     * 只包含非sdk bean的import
      */
     Set<String> importSet;
+
+    /**
+     * 只包含sdk bean的import
+     */
+    Set<String> sdkBeanSet;
 
     /**
      * 方法体全部内容，包括双括号

@@ -36,9 +36,9 @@ public class GenerateOptions {
     private String feignFactoryClassName;
     private String feignProviderClassName;
     private String applicationNamePrefix;
-    private boolean hasEntity;
-    private boolean hasDTO;
-    private boolean hasVO;
+    private boolean hasBean;
+//    private boolean hasDTO;
+//    private boolean hasVO;
     private boolean hasProvider;
     private boolean hasFallback;
     private boolean hasFactory;

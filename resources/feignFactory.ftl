@@ -16,7 +16,15 @@ import feign.hystrix.FallbackFactory;
 <#list importList as il>
 import ${il};
 </#list>
-
+<#if hasBean>
+<#list newSdkBeanImport as nsbs>
+import ${nsbs};
+</#list>
+<#else>
+<#list sdkBeanSet as sbs>
+import ${sbs};
+</#list>
+</#if>
 /**
 <#if classDescription??>
  * ${classDescription?replace('\"','')}接口的断路器工厂，用于处理异常信息
