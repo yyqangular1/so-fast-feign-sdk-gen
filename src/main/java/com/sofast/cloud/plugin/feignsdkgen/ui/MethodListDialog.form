@@ -297,7 +297,7 @@
                 <properties>
                   <model>
                     <item value="NULL"/>
-                    <item value="固定错误信息:E099"/>
+                    <item value="R.ng()"/>
                   </model>
                   <toolTipText value="微服务熔断的返回值，默认为NULL，可自定义"/>
                 </properties>

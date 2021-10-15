@@ -15,6 +15,7 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.*;
 import com.intellij.psi.impl.source.PsiClassImpl;
 import com.intellij.psi.impl.source.PsiClassReferenceType;
+import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.javadoc.PsiDocTag;
 import com.intellij.psi.javadoc.PsiDocToken;
 import com.sofast.cloud.plugin.feignsdkgen.dict.GlobalDict;
@@ -168,14 +169,16 @@ public class MethodListDialog extends JDialog {
                     }
                 }
                 if (StringUtil.isEmpty(classDescription)) {
-                    PsiDocTag clzDocTag = psiClass.getDocComment().findTagByName("Description");
-                    if (clzDocTag == null) {
-                        clzDocTag = psiClass.getDocComment().findTagByName("description");
-                    }
-                    if (clzDocTag != null) {
-                        classDescription = clzDocTag.getValueElement().getText();
-                    } else {
-                        if (psiClass.getDocComment() != null) {
+                    PsiDocComment docComment = psiClass.getDocComment();
+                    if (docComment != null) {
+                        PsiDocTag clzDocTag = psiClass.getDocComment().findTagByName("Description");
+                        if (clzDocTag == null) {
+                            clzDocTag = psiClass.getDocComment().findTagByName("description");
+                        }
+
+                        if (clzDocTag != null) {
+                            classDescription = clzDocTag.getValueElement().getText();
+                        } else {
                             for (PsiElement descriptionElement : psiClass.getDocComment().getDescriptionElements()) {
                                 if (descriptionElement instanceof PsiDocToken && !descriptionElement.getText().startsWith("<")) {
                                     classDescription += descriptionElement.getText();
@@ -183,6 +186,7 @@ public class MethodListDialog extends JDialog {
                             }
                         }
                     }
+
                 }
 
                 // 获取所有方法

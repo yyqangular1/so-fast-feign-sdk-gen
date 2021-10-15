@@ -12,7 +12,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$USER_HOME$/Downloads/freemarker-2.3.31.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lombok-1.18.12.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -21,25 +21,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$USER_HOME$/Downloads/lombok-1.18.12.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$USER_HOME$/Downloads/spring-web-5.2.4.RELEASE.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$USER_HOME$/Downloads/guava-26.0-jre.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/freemarker-2.3.31.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
