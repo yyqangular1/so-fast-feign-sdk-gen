@@ -5,6 +5,16 @@
     <vendor email="yanqing.yang@nttdata.com" url="http://ncit-sol.cn/">NCIT.SOL1</vendor>
 
     <description><![CDATA[
+        SoFast Framework's Feign SDK Generator
+        <ul>
+            <li>Support for Generator Feign Client Class</li>
+            <li>Support for Generator Fallback Class</li>
+            <li>Support for Generator Factory Class</li>
+            <li>Support for Generator Constants Class</li>
+            <li>Support for Generator Provider Class</li>
+            <li>Support for Move Dependencies JavaBean to SDK Package</li>
+        </ul>
+
         SoFast微服务框架专用Feign SDK生成器
         功能:
         <ul>
@@ -22,7 +32,13 @@
     <change-notes><![CDATA[
       <h4>0.1</h4>
       <ul>
-          <li>初版做成</li>
+          <li>Generator GUI done</li>
+          <li>Feign Client Template</li>
+          <li>Feign Constants Template</li>
+          <li>Feign FallBack Template</li>
+          <li>Feign FallBack Factory Template</li>
+          <li>Feign Provider Template</li>
+          <li>Multiple Feign SDK Parameter Setting</li>
       </ul>
       ]]>
     </change-notes>
