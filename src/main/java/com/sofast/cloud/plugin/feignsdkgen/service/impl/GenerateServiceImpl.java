@@ -70,6 +70,7 @@ public class GenerateServiceImpl implements GenerateService {
             // 创建基础目录
 //                VirtualFile sdkVf = VfsUtil.createDirectoryIfMissing(options.getClassPath());
 //                VirtualFile sdkVf = VfsUtil.createDirectoryIfMissing(options.getPackageName());
+//            PsiDirectory dir = PackageUtil.findOrCreateDirectoryForPackage(options.getModule(), options.getPackageName(), (PsiDirectory) null, false);
             PsiDirectory dir = PackageUtil.findOrCreateDirectoryForPackage(this.project, options.getPackageName(), (PsiDirectory) null, false);
             VirtualFile sdkVf = dir.getVirtualFile();
 

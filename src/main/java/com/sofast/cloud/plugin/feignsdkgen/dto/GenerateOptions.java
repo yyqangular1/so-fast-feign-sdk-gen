@@ -4,6 +4,7 @@
 
 package com.sofast.cloud.plugin.feignsdkgen.dto;
 
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiField;
 import com.sofast.cloud.plugin.feignsdkgen.ui.MethodListItem;
@@ -44,6 +45,7 @@ public class GenerateOptions {
     private boolean hasFactory;
     private boolean hasSlf4j;
     private Project project;
+    private Module module;
     private List<MethodListItem> selectedList;
     /**
      * import feign constants 的完整包路径

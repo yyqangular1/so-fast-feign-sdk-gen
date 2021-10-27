@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.sofast.cloud.plugin.feignSdkGen</id>
     <name>SoFast Feign Client Generator</name>
-    <version>0.1</version>
+    <version>0.1.2</version>
     <vendor email="yanqing.yang@nttdata.com" url="http://ncit-sol.cn/">NCIT.SOL1</vendor>
 
     <description><![CDATA[
@@ -30,6 +30,14 @@
     </description>
 
     <change-notes><![CDATA[
+      <h4>0.1.2</h4>
+      <ul>
+          <li>fixed idea-version's since-build</li>
+      </ul>
+      <h4>0.1.1</h4>
+      <ul>
+          <li>change description</li>
+      </ul>
       <h4>0.1</h4>
       <ul>
           <li>Generator GUI done</li>
@@ -44,7 +52,7 @@
     </change-notes>
 
     <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-    <idea-version since-build="173.0"/>
+    <idea-version since-build="182.0"/>
 
     <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->

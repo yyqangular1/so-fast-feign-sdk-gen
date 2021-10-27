@@ -9,6 +9,7 @@ import com.intellij.ide.util.PackageChooserDialog;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.LangDataKeys;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.text.StringUtil;
@@ -85,6 +86,7 @@ public class MethodListDialog extends JDialog {
 
     private GenerateService generateService;
     private Project project;
+    private Module module;
 
     private String classDescription = "";
 
@@ -93,7 +95,7 @@ public class MethodListDialog extends JDialog {
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
         this.project = project;
-
+        this.module = e.getData(LangDataKeys.MODULE);
         buttonOK.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -152,7 +154,7 @@ public class MethodListDialog extends JDialog {
                 PsiClassImpl psiClass = (PsiClassImpl) psiElement;
 
                 // 获取类的mapping
-                PsiAnnotation annotation = psiClass.getAnnotation(GlobalDict.ANNOTATION_GET);
+                PsiAnnotation annotation = psiClass.getAnnotation(GlobalDict.ANNOTATION_REQUEST);
                 if (annotation != null) {
                     // annotation的import完整包名
                     qualifiedName = annotation.getQualifiedName();
@@ -461,6 +463,7 @@ public class MethodListDialog extends JDialog {
 
         options.setApplicationNamePrefix(applicationNamePrefix);
         options.setProject(this.project);
+        options.setModule(this.module);
         options.setSelectedList(selectedValuesList);
         options.setHasBean(chkBean.isSelected());
 //        options.setHasDTO(chkDTO.isSelected());

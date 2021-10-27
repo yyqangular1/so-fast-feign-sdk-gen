@@ -6,7 +6,7 @@ package com.sofast.cloud.plugin.feignsdkgen.model;
 
 import lombok.Data;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -55,7 +55,7 @@ public class ClassModel {
 
     private int feignReturnVal;
 
-    private List<String> fields = new ArrayList<>(5);
+    private Set<String> fields = new HashSet<>(5);
 
     private Set<String> feignProviderImport;
 
