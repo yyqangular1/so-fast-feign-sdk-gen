@@ -36,5 +36,5 @@ PS：
                 |--feign
 
 SoFast框架是基于SpringBoot+SpringCloud&Alibaba的一套企业级微服务快速开发框架
-更多信息请咨询: http://ncit-sol.cn
+
 
